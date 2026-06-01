@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Data lake
+data/raw/
+data/curated/
+*.parquet
+*.csv
+!seeds/*.csv
+
+# Spark / Airflow logs
+logs/
+*.log
+spark-warehouse/
+metastore_db/
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+
+# Editors
+.vscode/
+.idea/
+.DS_Store
