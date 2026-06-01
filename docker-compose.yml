@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: taxi-postgres
+    environment:
+      POSTGRES_USER: taxi
+      POSTGRES_PASSWORD: taxi
+      POSTGRES_DB: taxi
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "taxi"]
+      interval: 5s
+      retries: 5
+
+  airflow:
+    image: apache/airflow:2.9.3-python3.11
+    container_name: taxi-airflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://taxi:taxi@postgres:5432/taxi
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+      AIRFLOW_CONN_TAXI_POSTGRES: postgres://taxi:taxi@postgres:5432/taxi
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./dbt:/opt/airflow/dbt
+      - ./spark:/opt/airflow/spark
+      - ./data:/opt/airflow/data
+      - ./requirements.txt:/requirements.txt
+    command: >
+      bash -c "pip install --no-cache-dir -r /requirements.txt &&
+               airflow db migrate &&
+               airflow users create -u admin -p admin -f Admin -l User -r Admin -e admin@example.com &&
+               airflow standalone"
+
+volumes:
+  postgres-data:
